@@ -22,7 +22,7 @@ public class DisruptorFacade {
 
     private Disruptor<LongEvent> disruptor;
 
-    private static final int ringBufferSize = 32;
+    private static final int ringBufferSize = 4096;
 
     public Disruptor<LongEvent> startDisruptor() {
 

@@ -49,12 +49,12 @@ public class DisruptorProducer {
     public static void main(String[] args) throws InterruptedException {
 
         DisruptorFacade disruptorFacade01 = new DisruptorFacade();
-        DisruptorProducer test01 = new DisruptorProducer(disruptorFacade01.startDisruptorR());
+        DisruptorProducer test01 = new DisruptorProducer(disruptorFacade01.startDisruptor());
         for (int i = 0; i < 10; i++) {
             test01.process01(i);
             Thread.sleep(1000);
         }
-        disruptorFacade01.shutdownDisruptor();
+        // disruptorFacade01.shutdownDisruptor();
 
         /*DisruptorFacade disruptorFacade02 = new DisruptorFacade();
         DisruptorProducer test02 = new DisruptorProducer(disruptorFacade02.startDisruptor());

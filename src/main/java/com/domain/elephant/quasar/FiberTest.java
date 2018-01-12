@@ -3,14 +3,9 @@ package com.domain.elephant.quasar;
 import co.paralleluniverse.fibers.Fiber;
 import co.paralleluniverse.fibers.SuspendExecution;
 import co.paralleluniverse.fibers.Suspendable;
-import co.paralleluniverse.fibers.httpclient.FiberHttpClientBuilder;
 import co.paralleluniverse.strands.Strand;
 import co.paralleluniverse.strands.SuspendableRunnable;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -30,11 +25,14 @@ public class FiberTest {
     @Suspendable
     private static void m1() throws InterruptedException {
 
+        long start = System.currentTimeMillis();
         String m = "m1";
-//        System.out.println("m1 begin");
+        //        System.out.println("m1 begin");
         m = m2();
-//        System.out.println("m1 end");
-//        System.out.println(m);
+        //        System.out.println("m1 end");
+        //        System.out.println(m);
+        start = System.currentTimeMillis() - start;
+        System.out.println(Thread.currentThread().getName() + ": m1 took: " + start + "ms");
     }
 
     @Suspendable
@@ -46,6 +44,8 @@ public class FiberTest {
         } catch (SuspendExecution suspendExecution) {
             suspendExecution.printStackTrace();
         }
+        // Thread.sleep will block thread
+        // Thread.sleep(1000);
         return m;
     }
 
@@ -59,10 +59,9 @@ public class FiberTest {
 
     static public void main(String[] args) throws InterruptedException {
 
-        int count = 10;
+        int count = 1000;
         testThreadPool(count);
         testFiber(count);
-        testFiberHttp(count);
     }
 
     private static void testThreadPool(int count) throws InterruptedException {
@@ -73,7 +72,7 @@ public class FiberTest {
         long t = System.currentTimeMillis();
         for (int i = 0; i < count; i++) {
             es.submit(() -> {
-                System.out.println(Thread.currentThread().getName());
+                //                System.out.println(Thread.currentThread().getName());
 
                 long start = System.currentTimeMillis();
                 try {
@@ -100,7 +99,7 @@ public class FiberTest {
         long t = System.currentTimeMillis();
         for (int i = 0; i < count; i++) {
             new Fiber<Void>("Caller", (SuspendableRunnable) () -> {
-                System.out.println(Thread.currentThread().getName());
+                //                System.out.println(Thread.currentThread().getName());
 
                 long start = System.currentTimeMillis();
                 m1();
@@ -113,47 +112,5 @@ public class FiberTest {
         t = System.currentTimeMillis() - t;
         long l = latency.longValue() / count;
         System.out.println("fiber took: " + t + ", latency: " + l + " ms");
-    }
-
-    private static int concurrencyLevel = 500;
-
-    private static void testFiberHttp(int count) throws InterruptedException {
-
-        final CountDownLatch latch = new CountDownLatch(count);
-        LongAdder latency = new LongAdder();
-        long t = System.currentTimeMillis();
-        for (int i = 0; i < count; i++) {
-            new Fiber<Void>("Http Caller", (SuspendableRunnable) () -> {
-                System.out.println(Thread.currentThread().getName());
-
-                final CloseableHttpClient client = FiberHttpClientBuilder.
-                        create(2). // use 2 io threads
-                        setMaxConnPerRoute(concurrencyLevel).
-                        setMaxConnTotal(concurrencyLevel).build();
-
-                long start = System.currentTimeMillis();
-                try {
-                    m11(client);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                start = System.currentTimeMillis() - start;
-                latency.add(start);
-                latch.countDown();
-            }).start();
-        }
-        latch.await();
-        t = System.currentTimeMillis() - t;
-        long l = latency.longValue() / count;
-        System.out.println("fiber took: " + t + ", latency: " + l + " ms");
-    }
-
-    @Suspendable
-    private static void m11(CloseableHttpClient client) throws IOException {
-
-        long start = System.currentTimeMillis();
-        CloseableHttpResponse response = client.execute(new HttpGet("http://www.baidu.com"));
-        start = System.currentTimeMillis() - start;
-        System.out.println("http took " + start + "ms");
     }
 }
